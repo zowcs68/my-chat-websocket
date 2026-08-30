@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "lib": ["ESNext"],
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleDetection": "force",
+    "moduleResolution": "bundler",
+    "jsx": "preserve",
+    "jsxImportSource": "@opentui/solid",
+    "allowJs": true,
+    "resolveJsonModule": true,
+    "noEmit": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "types": ["bun-types"]
+  },
+  "include": ["src/**/*"]
+}
