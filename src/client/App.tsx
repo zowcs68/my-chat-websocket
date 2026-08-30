@@ -56,7 +56,7 @@ function MessageRow(props: { message: ChatMessage; own: boolean }) {
       }
     >
       {/* Full-width row that pushes the bubble to the right (own) or left (others) */}
-      <box width="100%" flexDirection="row" justifyContent={props.own ? "flex-end" : "flex-start"} marginBottom={1}>
+      <box width="100%" flexDirection="row" justifyContent={props.own ? "flex-end" : "flex-start"} marginBottom={1} marginTop={1}>
         <box
           width="auto"
           maxWidth="70%"
