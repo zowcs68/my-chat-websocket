@@ -4,7 +4,7 @@ import { ChatSocket, type ConnectionState } from "./chat-socket";
 import type { ChatMessage } from "../shared/types";
 
 const WS_URL = process.env.CHAT_WS_URL ?? "ws://localhost:8080";
-const HANDLE = process.env.CHAT_HANDLE ?? `guest-${Math.random().toString(36).slice(2, 6)}`;
+const MAX_USERNAME_LENGTH = 24;
 
 const PALETTE = {
   bg: "#1a1b26",
@@ -56,7 +56,7 @@ function MessageRow(props: { message: ChatMessage; own: boolean }) {
       }
     >
       {/* Full-width row that pushes the bubble to the right (own) or left (others) */}
-      <box width="100%" flexDirection="row" justifyContent={props.own ? "flex-end" : "flex-start"} marginBottom={1} marginTop={1}>
+      <box width="100%" flexDirection="row" justifyContent={props.own ? "flex-end" : "flex-start"} marginBottom={1}>
         <box
           width="auto"
           maxWidth="70%"
@@ -81,21 +81,88 @@ function MessageRow(props: { message: ChatMessage; own: boolean }) {
   );
 }
 
-export function App() {
+function UsernameScreen(props: { onSubmit: (username: string) => void }) {
+  const [value, setValue] = createSignal("");
+  const [error, setError] = createSignal("");
+
+  const submit = () => {
+    const trimmed = value().trim();
+    if (!trimmed) {
+      setError("Username cannot be empty.");
+      return;
+    }
+    if (trimmed.length > MAX_USERNAME_LENGTH) {
+      setError(`Username must be ${MAX_USERNAME_LENGTH} characters or fewer.`);
+      return;
+    }
+    props.onSubmit(trimmed);
+  };
+
+  return (
+    <box style={{ width: "100%", height: "100%", justifyContent: "center", alignItems: "center", backgroundColor: PALETTE.bg }}>
+      <box
+        width="70%"
+        maxWidth={50}
+        flexDirection="column"
+        border
+        borderColor={PALETTE.border}
+        backgroundColor={PALETTE.panel}
+        paddingX={2}
+        paddingY={1}
+      >
+        <text height={1} fg={PALETTE.text}>
+          Welcome to Chat
+        </text>
+        <text height={1} fg={PALETTE.dim} marginTop={1}>
+          Enter your username:
+        </text>
+        <input
+          focused
+          value={value()}
+          placeholder="username"
+          onInput={(v) => {
+            setValue(v);
+            setError("");
+          }}
+          onSubmit={submit}
+          textColor={PALETTE.text}
+          focusedTextColor={PALETTE.text}
+          placeholderColor={PALETTE.dim}
+          backgroundColor={PALETTE.bg}
+          focusedBackgroundColor={PALETTE.bg}
+        />
+        <Show
+          when={error()}
+          fallback={
+            <text height={1} fg={PALETTE.dim} marginTop={1}>
+              Press Enter
+            </text>
+          }
+        >
+          <text height={1} fg={PALETTE.error} marginTop={1}>
+            {error()}
+          </text>
+        </Show>
+      </box>
+    </box>
+  );
+}
+
+function ChatScreen(props: { username: string }) {
   const dimensions = useTerminalDimensions();
   const [messages, setMessages] = createSignal<ChatMessage[]>([]);
   const [connectionState, setConnectionState] = createSignal<ConnectionState>("connecting");
   const [inputValue, setInputValue] = createSignal("");
 
   const socket = new ChatSocket({ url: WS_URL });
-  socket.currentSender = HANDLE;
+  socket.currentSender = props.username;
 
   const pushMessage = (message: ChatMessage) => setMessages((prev) => [...prev, message]);
 
   socket.on("state", (state: ConnectionState) => {
     setConnectionState(state);
     if (state === "open") {
-      pushMessage({ type: "system", sender: "system", text: `Connected as ${HANDLE}`, timestamp: Date.now() });
+      pushMessage({ type: "system", sender: "system", text: `Connected as ${props.username}`, timestamp: Date.now() });
     } else if (state === "reconnecting") {
       pushMessage({ type: "system", sender: "system", text: "Connection lost, reconnecting…", timestamp: Date.now() });
     }
@@ -106,7 +173,7 @@ export function App() {
     pushMessage({
       type: "system",
       sender: "system",
-      text: `Connecting to ${WS_URL} as ${HANDLE}…`,
+      text: `Connecting to ${WS_URL} as ${props.username}…`,
       timestamp: Date.now(),
     });
     socket.connect();
@@ -148,7 +215,7 @@ export function App() {
     <box style={{ width: "100%", height: "100%", flexDirection: "column", backgroundColor: PALETTE.bg }}>
       {/* Status bar */}
       <box height={1} paddingX={1} flexDirection="row" backgroundColor={PALETTE.panel}>
-        <text fg={PALETTE.text}>{`Chat TUI — ${HANDLE}`}</text>
+        <text fg={PALETTE.text}>{`Chat TUI — ${props.username}`}</text>
         <text fg={PALETTE.dim}>{`   ${WS_URL}   `}</text>
         <text fg={STATE_COLOR[connectionState()]}>{`● ${STATE_LABEL[connectionState()]}`}</text>
       </box>
@@ -176,7 +243,9 @@ export function App() {
           },
         }}
       >
-        <For each={messages()}>{(message) => <MessageRow message={message} own={message.sender === HANDLE} />}</For>
+        <For each={messages()}>
+          {(message) => <MessageRow message={message} own={message.sender === props.username} />}
+        </For>
       </scrollbox>
 
       {/* Input prompt */}
@@ -195,5 +264,15 @@ export function App() {
         />
       </box>
     </box>
+  );
+}
+
+export function App() {
+  const [username, setUsername] = createSignal<string | null>(null);
+
+  return (
+    <Show when={username()} fallback={<UsernameScreen onSubmit={setUsername} />}>
+      <ChatScreen username={username()!} />
+    </Show>
   );
 }
