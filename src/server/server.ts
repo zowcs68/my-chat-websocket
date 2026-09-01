@@ -1,7 +1,8 @@
 import type { ServerWebSocket } from "bun";
 import { isOutgoingChatPayload, type ChatMessage, type OutgoingChatPayload } from "../shared/types";
 
-const PORT = Number(process.env.CHAT_PORT ?? 8080);
+const PORT = Number(process.env.PORT ?? 8080);
+
 
 interface SocketData {
   id: string;
@@ -16,6 +17,7 @@ function broadcast(server: ReturnType<typeof Bun.serve>, message: ChatMessage) {
 }
 
 const server = Bun.serve<SocketData>({
+  hostname: "0.0.0.0",
   port: PORT,
   fetch(req, server) {
     const upgraded = server.upgrade(req, { data: { id: crypto.randomUUID() } });
