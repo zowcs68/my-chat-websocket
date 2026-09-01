@@ -3,7 +3,7 @@ import { useKeyboard, useTerminalDimensions } from "@opentui/solid";
 import { ChatSocket, type ConnectionState } from "./chat-socket";
 import type { ChatMessage } from "../shared/types";
 
-const WS_URL = process.env.CHAT_WS_URL ?? "ws://localhost:8080";
+const WS_URL = "wss://my-chat-websocket.onrender.com";
 const MAX_USERNAME_LENGTH = 24;
 
 const PALETTE = {
